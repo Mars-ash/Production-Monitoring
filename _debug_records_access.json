@@ -1,0 +1,29 @@
+{
+    "p17_all": [
+        {
+            "Machine No": "P17",
+            "Date": "2026-04-24 00:00:00",
+            "Time Start": "1899-12-30 10:15:00",
+            "Operator": "Fahmi",
+            "Part No": "APAR-3KG-COMMUTER",
+            "Process": "P2",
+            "Part Name": "BRACKET APAR 3KG - HIACE COMMUTER",
+            "PPM": "5.00",
+            "Time Input Qty Produksi": "1899-12-30 12:00:00",
+            "Work Time Eff H": "01:45",
+            "Qty Target": "446.0",
+            "Qty Proses": "115",
+            "Productivity": "0.257847533632287",
+            "Customer": "TRIMAS",
+            "ID PDR": "10279",
+            "Finish": "RUN",
+            "Durasi M Total": "105",
+            "Work Time Eff M": "105",
+            "Dies Problem": "0",
+            "Model": "HIACE COMMUTER",
+            "Preventive Mtn": "1",
+            "Time Finish": null,
+            "Process Name": "Assy-Bending"
+        }
+    ]
+}

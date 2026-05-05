@@ -4,7 +4,6 @@
 
 @section('styles')
 <style>
-    /* Machine No — pill biru selaras dengan date picker */
     .filter-pill-select-wrap {
         position: relative;
         display: inline-block;
@@ -70,7 +69,6 @@
 
 @section('content')
 <div class="container-fluid px-3 px-lg-4">
-    {{-- Filter tanggal & status --}}
     <div class="row mb-4">
         <div class="col-12">
             <div class="d-flex flex-wrap align-items-center gap-3">
@@ -116,7 +114,6 @@
         </div>
     </div>
 
-    {{-- Statistik Cards --}}
     <div class="row g-3 mb-4" id="statsCards">
         <div class="col-6 col-lg-6">
             <div class="card stat-card h-100">
@@ -146,7 +143,6 @@
         </div>
     </div>
 
-    {{-- Charts --}}
     <div class="row g-3 mb-4">
         <div class="col-12">
             <div class="card chart-card h-100">
@@ -164,7 +160,6 @@
         </div>
     </div>
 
-    {{-- Tabel Produksi --}}
     <div class="card chart-card mb-4">
         <div class="card-header py-3 d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-2">
             <span><i class="bi bi-table me-2"></i>Daftar Produksi</span>
@@ -236,20 +231,13 @@
 
 @section('scripts')
 <script>
-    // ===========================
-    // Chart instances
-    // ===========================
     let chartProductivity = null;
 
-    // Warna chart
     const chartColors = [
         '#0d6efd', '#198754', '#ffc107', '#dc3545', '#6f42c1',
         '#0dcaf0', '#fd7e14', '#20c997', '#d63384', '#6610f2',
     ];
 
-    /**
-     * Inisiasi / update semua chart dengan data baru.
-     */
     function renderCharts(data) {
         const prodLabels = Object.keys(data.charts.productivityByMachine);
         const prodValues = Object.values(data.charts.productivityByMachine);
@@ -352,18 +340,11 @@
         chartProductivity.render();
     }
 
-    /**
-     * Update statistik cards.
-     */
     function updateStats(stats) {
         document.getElementById('statMachines').textContent = formatNumber(stats.active_machines);
         document.getElementById('statProductivity').textContent = formatPercent(stats.avg_productivity * 100);
     }
 
-    /**
-     * Update tabel produksi.
-     * Juga update header kolom waktu berdasarkan filter status aktif.
-     */
     function updateTable(tableData) {
         const tbody = document.getElementById('tableBody');
         const status = getSelectedStatus();
@@ -402,9 +383,6 @@
         `).join('');
     }
 
-    /**
-     * Fetch data via AJAX dan update semua komponen.
-     */
     function getSelectedStatus() {
         const el = document.getElementById('statusFilter');
         return el ? el.value : '';
@@ -447,10 +425,6 @@
         }
     }
 
-    // ===========================
-    // Event Listeners
-    // ===========================
-
     function pushDashboardUrl(date) {
         const status = getSelectedStatus();
         const machineType = getSelectedMachineType();
@@ -466,7 +440,6 @@
         if (sp && v) sp.textContent = formatIsoDateToDMY(v);
     }
 
-    // Date picker change → AJAX fetch
     document.getElementById('datePicker').addEventListener('change', function () {
         const date = this.value;
         if (date) {
@@ -492,7 +465,6 @@
         }
     });
 
-    // Table search filter
     document.getElementById('tableSearch').addEventListener('input', function () {
         const query = this.value.toLowerCase();
         const rows = document.querySelectorAll('#tableBody tr');
@@ -503,11 +475,7 @@
         });
     });
 
-    // ===========================
-    // Initial render charts dari data server-side
-    // ===========================
     document.addEventListener('DOMContentLoaded', function () {
-        // Ambil data awal via AJAX untuk render charts
         fetchData(document.getElementById('datePicker').value || '{{ $selectedDate }}');
     });
 </script>

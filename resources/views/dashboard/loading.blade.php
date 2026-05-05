@@ -48,7 +48,6 @@
         cursor: not-allowed;
     }
 
-    /* Machine No — pill biru selaras dengan date picker */
     .filter-pill-select-wrap {
         position: relative;
         display: inline-block;
@@ -124,7 +123,6 @@
 @section('content')
 <div class="container-fluid px-3 px-lg-4">
 
-    {{-- Filter Bar --}}
     <div class="filter-bar" id="filterBar">
 
         {{-- Toggle Per Hari / Per Bulan --}}
@@ -139,7 +137,6 @@
             </button>
         </div>
 
-        {{-- Input Tanggal (Per Hari) --}}
         <div id="wrapDaily" class="{{ $dateMode === 'daily' ? '' : 'd-none' }} d-flex align-items-center gap-2 flex-wrap">
             <label for="inputDate" class="mb-0 fw-semibold text-muted" style="font-size: 0.95rem;">Tanggal:</label>
             <label class="date-pill mb-0">
@@ -151,7 +148,6 @@
             </label>
         </div>
 
-        {{-- Input Bulan (Per Bulan) --}}
         <div id="wrapMonthly" class="{{ $dateMode === 'monthly' ? '' : 'd-none' }} d-flex align-items-center gap-2 flex-wrap">
             <label for="inputMonth" class="mb-0 fw-semibold text-muted" style="font-size: 0.95rem;">Bulan:</label>
             <label class="date-pill mb-0">
@@ -163,7 +159,6 @@
             </label>
         </div>
 
-        {{-- Filter Machine Type (pill; dinonaktifkan saat Machine No spesifik dipilih) --}}
         <div class="d-flex align-items-center gap-2 flex-wrap ms-md-2" id="wrapMachineTypeFilter">
             <span class="mb-0 fw-semibold text-muted" style="font-size: 0.95rem;">Machine Type:</span>
             <div class="filter-pill-select-wrap filter-pill-select-wrap--wide">
@@ -179,7 +174,6 @@
             </div>
         </div>
 
-        {{-- Filter Machine No (pill highlight, selaras tanggal) --}}
         <div class="d-flex align-items-center gap-2 flex-wrap">
             <span class="mb-0 fw-semibold text-muted" style="font-size: 0.95rem;">Machine No:</span>
             <div class="filter-pill-select-wrap">
@@ -195,14 +189,12 @@
             </div>
         </div>
 
-        {{-- Tombol Apply --}}
         <button type="button" id="btnApplyFilter" class="btn btn-primary btn-sm ms-auto" style="border-radius:8px;">
             <i class="bi bi-funnel me-1"></i>Terapkan
         </button>
     </div>
 
 
-    {{-- Bar Chart --}}
     <div class="row g-3 mb-4">
         <div class="col-12">
             <div class="card chart-card">
@@ -235,7 +227,6 @@
         </div>
     </div>
 
-    {{-- Tabel Mesin --}}
     <div class="card chart-card mb-4">
         <div class="card-header py-3 d-flex flex-wrap align-items-center justify-content-between gap-2">
             <span><i class="bi bi-table me-2"></i>Daftar Mesin</span>
@@ -262,7 +253,6 @@
                                 $pctClass = $pct >= 80
                                     ? 'loading-pct-good'
                                     : ($pct >= 50 ? 'loading-pct-medium' : 'loading-pct-low');
-                                // Format decimal: hapus trailing zeros (480.0000 → 480, 8.5000 → 8.5)
                                 $fmtNum = fn($v) => $v !== null
                                     ? rtrim(rtrim(number_format((float)$v, 2, '.', ''), '0'), '.')
                                     : '-';
@@ -448,7 +438,6 @@
                            : pct >= 50 ? 'loading-pct-medium'
                                        : 'loading-pct-low';
             const pctStr = pct.toFixed(1).replace('.', ',') + '%';
-            // Hapus trailing zeros: 480.0000 → 480, 8.50 → 8.5
             const fmt = v => v != null ? parseFloat(v).toString() : '-';
             return `<tr>
                 <td class="fw-medium">${row['Machine No'] ?? '-'}</td>
@@ -479,9 +468,6 @@
         }
     }
 
-    // ============================================================
-    // Fetch data dari server via AJAX
-    // ============================================================
     function syncMachineTypeLock() {
         const noEl = document.getElementById('selectMachineNo');
         const typeEl = document.getElementById('selectMachineType');
@@ -532,7 +518,6 @@
             updateTable(data.table);
             updateSubtitle();
 
-            // Update URL tanpa reload
             const urlParams = new URLSearchParams({ mode, date, month, machine_type: machineType, machine_no: machineNo });
             history.pushState(null, '', `/dashboard/loading?${urlParams}`);
 
@@ -544,9 +529,6 @@
         }
     }
 
-    // ============================================================
-    // Toggle date mode
-    // ============================================================
     function setMode(mode) {
         currentMode = mode;
 
@@ -556,9 +538,6 @@
         document.getElementById('wrapMonthly').classList.toggle('d-none', mode !== 'monthly');
     }
 
-    // ============================================================
-    // Event Listeners
-    // ============================================================
     document.getElementById('btnDaily').addEventListener('click', () => setMode('daily'));
     document.getElementById('btnMonthly').addEventListener('click', () => setMode('monthly'));
 
@@ -569,7 +548,6 @@
 
     document.getElementById('selectMachineNo').addEventListener('change', syncMachineTypeLock);
 
-    // Cari tabel (client-side, hanya filter baris yg sudah ada)
     document.getElementById('tableSearch').addEventListener('input', function () {
         const q = this.value.toLowerCase();
         document.querySelectorAll('#tableBody tr').forEach(row => {
@@ -577,9 +555,6 @@
         });
     });
 
-    // ============================================================
-    // Initial render dari data server-side
-    // ============================================================
     document.addEventListener('DOMContentLoaded', () => {
         syncMachineTypeLock();
         renderChart(initialChartData);

@@ -5,6 +5,13 @@
 .env.production
 .phpactor.json
 .phpunit.result.cache
+dump.php
+dump_access.php
+nulls.json
+_debug*.json
+_p*_records.json
+autosync.bat
+sync.bat
 /.fleet
 /.idea
 /.nova

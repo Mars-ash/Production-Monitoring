@@ -5,9 +5,14 @@
 @section('content')
 <div class="container-fluid px-3 px-lg-4">
     <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-4">
-        <h4 class="fw-bold text-dark mb-0">
-            <i class="bi bi-people-fill me-2"></i>Manajemen User
-        </h4>
+        <div class="d-flex align-items-center gap-3">
+            <a href="{{ url()->previous() }}" class="btn btn-outline-secondary btn-sm rounded-3 px-2 py-1" title="Kembali">
+                <i class="bi bi-arrow-left"></i>
+            </a>
+            <h4 class="fw-bold text-dark mb-0">
+                <i class="bi bi-people-fill me-2"></i>Manajemen User
+            </h4>
+        </div>
         <button type="button" class="btn btn-primary btn-sm rounded-3 px-3" data-bs-toggle="modal" data-bs-target="#addUserModal">
             <i class="bi bi-plus-lg me-1"></i>Tambah User
         </button>

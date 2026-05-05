@@ -57,7 +57,8 @@ class LoadingMachineController extends Controller
         $dateMode    = $request->input('mode', 'daily');
         $date        = $request->input('date') ?? Carbon::today()->format('Y-m-d');
         $month       = $request->input('month') ?? Carbon::today()->format('Y-m');
-        $machineType = $request->input('machine_type') ?? '';
+        $rawMachineType = $request->has('machine_type') ? $request->input('machine_type') : 'Stamping';
+        $machineType = $rawMachineType ?? '';
         $machineNo   = $request->input('machine_no') ?? '';
         [$machineType, $machineNo] = $this->normalizeLoadingFilters($machineType, $machineNo);
 
@@ -95,7 +96,8 @@ class LoadingMachineController extends Controller
         $dateMode    = $request->input('mode', 'daily');
         $date        = $request->input('date') ?? Carbon::today()->format('Y-m-d');
         $month       = $request->input('month') ?? Carbon::today()->format('Y-m');
-        $machineType = $request->input('machine_type') ?? '';
+        $rawMachineType = $request->has('machine_type') ? $request->input('machine_type') : 'Stamping';
+        $machineType = $rawMachineType ?? '';
         $machineNo   = $request->input('machine_no') ?? '';
         [$machineType, $machineNo] = $this->normalizeLoadingFilters($machineType, $machineNo);
 

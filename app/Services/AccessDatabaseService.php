@@ -6,10 +6,7 @@ use Illuminate\Support\Facades\Log;
 use PDO;
 use PDOException;
 
-/**
- * Service koneksi ke Microsoft Access via PDO ODBC.
- * Mengambil data produksi dari file .accdb/.mdb untuk disinkronkan ke MySQL.
- */
+
 class AccessDatabaseService implements AccessDatabaseServiceInterface
 {
     private string $dbPath;
@@ -39,18 +36,27 @@ class AccessDatabaseService implements AccessDatabaseServiceInterface
         }
 
         try {
-            // Query ke tabel Access — sesuaikan nama tabel dengan database Access
-            $sql = 'SELECT * FROM [Query - Daily PDR Live Excel]';
-            $params = [];
-
+            // Jika tanggal spesifik, fetch langsung
             if ($date !== null) {
-                $sql .= ' WHERE [Date] = ?';
-                $params[] = $date;
-            }
+                $stmt = $pdo->prepare('SELECT * FROM [Query - Daily PDR Live Web] WHERE [Date] = ?');
+                $stmt->execute([$date]);
+                $records = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            } else {
+                // Fetch semua: ODBC driver sering memotong hasil jika terlalu banyak row (>2000).
+                // Solusi: fetch daftar tanggal unik dulu, lalu fetch per tanggal.
+                $dateStmt = $pdo->query('SELECT DISTINCT [Date] FROM [Query - Daily PDR Live Web] ORDER BY [Date]');
+                $dates = $dateStmt->fetchAll(PDO::FETCH_COLUMN, 0);
 
-            $stmt = $pdo->prepare($sql);
-            $stmt->execute($params);
-            $records = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                $records = [];
+                foreach ($dates as $d) {
+                    $stmt = $pdo->prepare('SELECT * FROM [Query - Daily PDR Live Web] WHERE [Date] = ?');
+                    $stmt->execute([$d]);
+                    $batch = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                    foreach ($batch as $row) {
+                        $records[] = $row;
+                    }
+                }
+            }
 
             Log::info('AccessDatabaseService: Fetch records berhasil', [
                 'correlationId' => $correlationId,
@@ -102,12 +108,10 @@ class AccessDatabaseService implements AccessDatabaseServiceInterface
             $conditions = [];
             $params = [];
 
-            // Filter per hari (prioritas di atas bulan)
             if ($date !== null) {
                 $conditions[] = '[Date] = ?';
                 $params[] = $date;
             } elseif ($month !== null) {
-                // Format $month: 'Y-m', contoh '2026-04'
                 [$year, $mon] = explode('-', $month);
                 $conditions[] = 'Year([Date]) = ?';
                 $conditions[] = 'Month([Date]) = ?';
@@ -192,10 +196,6 @@ class AccessDatabaseService implements AccessDatabaseServiceInterface
         return $pdo !== null;
     }
 
-    /**
-     * Buat koneksi PDO ke file Microsoft Access.
-     * Mengembalikan null jika gagal (file tidak ada, driver tidak terinstall, dsb).
-     */
     private function createConnection(string $correlationId): ?PDO
     {
         if (empty($this->dbPath)) {

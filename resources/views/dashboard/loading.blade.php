@@ -168,7 +168,7 @@
             <span class="mb-0 fw-semibold text-muted" style="font-size: 0.95rem;">Machine Type:</span>
             <div class="filter-pill-select-wrap filter-pill-select-wrap--wide">
                 <select id="selectMachineType" class="filter-pill-select" aria-label="Pilih Machine Type" title="">
-                    <option value="">— Semua —</option>
+                    <option value="" {{ $selectedMachineType === '' ? 'selected' : '' }}>— Semua —</option>
                     @foreach($machineTypes as $type)
                         <option value="{{ $type }}" {{ $selectedMachineType === $type ? 'selected' : '' }}>
                             {{ $type }}
@@ -206,24 +206,29 @@
     <div class="row g-3 mb-4">
         <div class="col-12">
             <div class="card chart-card">
-                <div class="card-header py-3 d-flex align-items-center justify-content-between">
-                    <span><i class="bi bi-bar-chart me-2"></i>% Loading per Mesin</span>
-                    <small class="text-muted" id="chartSubtitle">
-                        @if($dateMode === 'monthly')
-                            Bulan: {{ \Carbon\Carbon::createFromFormat('Y-m', $selectedMonth)->format('M-Y') }}
-                        @else
-                            Tanggal: {{ \Carbon\Carbon::parse($selectedDate)->format('d-M-Y') }}
-                        @endif
-                    </small>
+                <div class="card-header py-3 d-flex flex-column">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <span><i class="bi bi-bar-chart me-2"></i>% Loading per Mesin</span>
+                        <small class="text-muted" id="chartSubtitle">
+                            @if($dateMode === 'monthly')
+                                Bulan: {{ \Carbon\Carbon::createFromFormat('Y-m', $selectedMonth)->format('M-Y') }}
+                            @else
+                                Tanggal: {{ \Carbon\Carbon::parse($selectedDate)->format('d-M-Y') }}
+                            @endif
+                        </small>
+                    </div>
+                    <small class="text-muted mt-1" style="font-size: 0.78rem;">100% = 7×2 jam (2 Shift)</small>
                 </div>
                 <div class="card-body">
                     <div id="chartEmpty" class="{{ count($chartData['labels']) > 0 ? 'd-none' : '' }} text-center text-muted py-4">
                         <i class="bi bi-inbox" style="font-size:2rem;"></i>
                         <p class="mt-2 mb-0">Tidak ada data untuk ditampilkan</p>
                     </div>
-                    <div id="chartWrapper" style="position:relative; height:280px; width:100%;"
-                         class="{{ count($chartData['labels']) === 0 ? 'd-none' : '' }}">
-                        <canvas id="chartLoading"></canvas>
+                    <div style="overflow-x: auto; overflow-y: hidden;">
+                        <div id="chartWrapper" style="position:relative; height:320px; width:100%; min-width: {{ count($chartData['labels']) * 50 }}px;"
+                             class="{{ count($chartData['labels']) === 0 ? 'd-none' : '' }}">
+                            <div id="chartLoading"></div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -238,15 +243,15 @@
                 placeholder="Cari mesin..." style="max-width:220px; border-radius:8px;">
         </div>
         <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-production table-striped table-hover mb-0">
-                    <thead>
+            <div class="table-responsive" style="max-height: 520px; overflow: auto;">
+                <table class="table table-production table-striped table-hover mb-0" style="min-width: 600px;">
+                    <thead style="position: sticky; top: 0; z-index: 2; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
                         <tr>    
                             <th>Machine No</th>
                             <th>Date</th>
-                            <th>Work Time</th>
-                            <th>Durasi Total</th>
-                            <th>Work Time Eff</th>
+                            <th>Work Time (M)</th>
+                            <th>Durasi Total (M)</th>
+                            <th>Work Time Eff (M)</th>
                             <th>% Loading</th>
                         </tr>
                     </thead>
@@ -289,19 +294,12 @@
 
 @section('scripts')
 <script>
-    // ============================================================
-    // State
-    // ============================================================
     let chartLoading = null;
     let currentMode  = '{{ $dateMode }}';
-    /** Nilai Machine Type sebelum filter mesin spesifik (untuk dipulihkan). */
     let savedMachineTypeWhenLocked = '';
 
     const initialChartData = @json($chartData);
 
-    // ============================================================
-    // Render bar chart % Loading per Machine No
-    // ============================================================
     function renderChart(chartData) {
         const wrapper = document.getElementById('chartWrapper');
         const emptyEl = document.getElementById('chartEmpty');
@@ -317,78 +315,119 @@
 
         if (chartLoading) chartLoading.destroy();
 
-        chartLoading = new Chart(document.getElementById('chartLoading'), {
-            data: {
-                labels: chartData.labels,
-                datasets: [
-                    {
-                        type: 'line',
-                        label: 'Target 100%',
-                        data: chartData.labels.map(() => 100),
-                        borderColor: '#dc3545',
-                        borderWidth: 2,
-                        borderDash: [6, 4],
-                        pointRadius: 0,
-                        fill: false,
-                        order: 1,
+        const options = {
+            series: [{
+                name: '% Loading',
+                type: 'column',
+                data: chartData.values
+            }, {
+                name: 'Target 100%',
+                type: 'line',
+                data: chartData.labels.map(() => 100)
+            }],
+            chart: {
+                height: 300,
+                type: 'line',
+                toolbar: {
+                    show: true,
+                    tools: {
+                        download: true,
+                        selection: true,
+                        zoom: true,
+                        zoomin: true,
+                        zoomout: true,
+                        pan: true,
                     },
-                    {
-                        type: 'bar',
-                        label: '% Loading',
-                        data: chartData.values,
-                        backgroundColor: 'rgba(13, 110, 253, 0.78)',
-                        borderRadius: 6,
-                        maxBarThickness: 60,
-                        order: 2,
-                    }
-                ],
+                },
+                animations: {
+                    enabled: true,
+                    easing: 'easeinout',
+                    speed: 800,
+                }
             },
-            plugins: [{
-                id: 'barLabels',
-                afterDatasetsDraw(chart) {
-                    const ctx = chart.ctx;
-                    chart.data.datasets.forEach((dataset, i) => {
-                        if (dataset.type === 'line') return;
-                        const meta = chart.getDatasetMeta(i);
-                        meta.data.forEach((bar, idx) => {
-                            const val = dataset.data[idx] + '%';
-                            let yPos = bar.y - 6;
-                            ctx.fillStyle = '#212529';
-                            if (yPos < 15) {
-                                yPos = bar.y + 15;
-                            }
-                            ctx.font = 'bold 12px sans-serif';
-                            ctx.textAlign = 'center';
-                            ctx.textBaseline = 'bottom';
-                            ctx.fillText(val, bar.x, yPos);
-                        });
-                    });
+            stroke: {
+                width: [0, 2],
+                curve: 'smooth',
+                dashArray: [0, 5]
+            },
+            colors: ['#0d6efd', '#dc3545'],
+            fill: {
+                type: 'gradient',
+                gradient: {
+                    shade: 'light',
+                    type: "vertical",
+                    shadeIntensity: 0.25,
+                    gradientToColors: undefined,
+                    inverseColors: true,
+                    opacityFrom: 0.85,
+                    opacityTo: 0.85,
+                    stops: [50, 0, 100]
+                },
+            },
+            plotOptions: {
+                bar: {
+                    columnWidth: '50%',
+                    borderRadius: 6,
+                    dataLabels: {
+                        position: 'top',
+                    }
+                }
+            },
+            dataLabels: {
+                enabled: true,
+                enabledOnSeries: [0],
+                formatter: function (val) {
+                    return val + "%";
+                },
+                offsetY: -20,
+                style: {
+                    fontSize: '12px',
+                    colors: ["#304758"]
+                }
+            },
+            labels: chartData.labels,
+            xaxis: {
+                type: 'category',
+                tooltip: {
+                    enabled: false
+                }
+            },
+            yaxis: [{
+                title: {
+                    text: '% Loading',
+                },
+                max: 120,
+                labels: {
+                    formatter: function (val) {
+                        return val.toFixed(0) + "%";
+                    }
                 }
             }],
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: false },
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        suggestedMax: 120,
-                        grace: '10%',
-                        ticks: { callback: v => v + '%' },
-                    },
-                    x: {
-                        ticks: { maxRotation: 45, minRotation: 0 }
-                    }
-                },
+            legend: {
+                position: 'top',
+                horizontalAlign: 'right',
             },
-        });
+            markers: {
+                size: 0
+            },
+            tooltip: {
+                shared: true,
+                intersect: false,
+                y: {
+                    formatter: function (y) {
+                        if (typeof y !== "undefined") {
+                            return y.toFixed(1) + "%";
+                        }
+                        return y;
+                    }
+                }
+            }
+        };
+
+        chartLoading = new ApexCharts(document.querySelector("#chartLoading"), options);
+        chartLoading.render();
     }
 
-    // ============================================================
-    // Update tabel
-    // ============================================================
     function updateTable(rows) {
         const tbody = document.getElementById('tableBody');
 
@@ -422,14 +461,6 @@
         }).join('');
     }
 
-    // ============================================================
-    // Update summary cards
-    // ============================================================
-
-
-    // ============================================================
-    // Update subtitle chart
-    // ============================================================
     function syncDateMonthLabels() {
         const d = document.getElementById('inputDate').value;
         const m = document.getElementById('inputMonth').value;

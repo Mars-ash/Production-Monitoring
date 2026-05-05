@@ -2,6 +2,63 @@
 
 @section('title', 'Dashboard — Daily Live Production')
 
+@section('styles')
+<style>
+    /* Machine No — pill biru selaras dengan date picker */
+    .filter-pill-select-wrap {
+        position: relative;
+        display: inline-block;
+        border-radius: 12px;
+        background: #4f6cf7;
+        box-shadow: 0 3px 14px rgba(79, 108, 247, 0.45);
+        min-width: 8.5rem;
+        max-width: 14rem;
+    }
+    .filter-pill-select-wrap:hover {
+        filter: brightness(1.06);
+    }
+    .filter-pill-select-wrap:focus-within {
+        outline: 3px solid rgba(255, 255, 255, 0.95);
+        outline-offset: 2px;
+    }
+    .filter-pill-select {
+        appearance: none;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        width: 100%;
+        max-width: 100%;
+        background: transparent;
+        border: 0;
+        color: #fff;
+        font-weight: 700;
+        font-size: 1.15rem;
+        line-height: 1.25;
+        letter-spacing: 0.02em;
+        padding: 0.65rem 2.35rem 0.65rem 1.1rem;
+        min-height: 3rem;
+        cursor: pointer;
+        border-radius: 12px;
+        box-sizing: border-box;
+    }
+    .filter-pill-select option {
+        color: #1a1d23;
+        background: #fff;
+        font-weight: 600;
+    }
+    .filter-pill-select-icon {
+        position: absolute;
+        right: 0.65rem;
+        top: 50%;
+        transform: translateY(-50%);
+        pointer-events: none;
+        color: #fff;
+        font-size: 1.1rem;
+        opacity: 0.95;
+        line-height: 1;
+    }
+</style>
+@endsection
+
 @section('page_heading')
 <a class="page-heading-link" href="{{ route('dashboard', array_filter(['date' => request('date'), 'status' => request('status')])) }}" title="Kembali ke Home">
     <div class="page-heading-bar d-flex align-items-center gap-2">
@@ -33,13 +90,27 @@
                         >
                     </label>
                 </div>
-                <div class="d-flex align-items-center gap-2">
-                    <label for="statusFilter" class="form-label mb-0 fw-medium text-muted">Status:</label>
-                    <select class="form-select" id="statusFilter" style="max-width: 200px; border-radius: 8px;">
-                        <option value="" {{ $selectedStatus === '' ? 'selected' : '' }}>Semua</option>
-                        <option value="RUN" {{ $selectedStatus === 'RUN' ? 'selected' : '' }}>RUN</option>
-                        <option value="FINISH" {{ $selectedStatus === 'FINISH' ? 'selected' : '' }}>FINISH</option>
-                    </select>
+                <div class="d-flex align-items-center gap-2 flex-wrap">
+                    <span class="form-label mb-0 fw-semibold text-muted">Status:</span>
+                    <div class="filter-pill-select-wrap">
+                        <select class="filter-pill-select" id="statusFilter" aria-label="Pilih status">
+                            <option value="" {{ $selectedStatus === '' ? 'selected' : '' }}>Semua</option>
+                            <option value="RUN" {{ $selectedStatus === 'RUN' ? 'selected' : '' }}>RUN</option>
+                            <option value="FINISH" {{ $selectedStatus === 'FINISH' ? 'selected' : '' }}>FINISH</option>
+                        </select>
+                        <i class="bi bi-chevron-down filter-pill-select-icon" aria-hidden="true"></i>
+                    </div>
+                </div>
+                <div class="d-flex align-items-center gap-2 flex-wrap">
+                    <span class="form-label mb-0 fw-semibold text-muted">Machine Type:</span>
+                    <div class="filter-pill-select-wrap" style="min-width: 12rem;">
+                        <select class="filter-pill-select" id="machineTypeFilter" aria-label="Pilih machine type">
+                            <option value="" {{ ($selectedMachineType ?? '') === '' ? 'selected' : '' }}>Semua</option>
+                            <option value="Stamping" {{ ($selectedMachineType ?? '') === 'Stamping' ? 'selected' : '' }}>Stamping</option>
+                            <option value="Non Stamping" {{ ($selectedMachineType ?? '') === 'Non Stamping' ? 'selected' : '' }}>Non Stamping</option>
+                        </select>
+                        <i class="bi bi-chevron-down filter-pill-select-icon" aria-hidden="true"></i>
+                    </div>
                 </div>
             </div>
         </div>
@@ -83,8 +154,10 @@
                     <i class="bi bi-bar-chart me-2"></i>Produktivitas per Mesin
                 </div>
                 <div class="card-body">
-                    <div style="position: relative; height: 250px; width: 100%;">
-                        <canvas id="chartProductivity"></canvas>
+                    <div style="overflow-x: auto; overflow-y: hidden;">
+                        <div id="chartProductivityWrapper" style="position: relative; height: 350px; width: 100%;">
+                            <div id="chartProductivity"></div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -109,16 +182,17 @@
             </style>
         </div>
         <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-production table-striped table-hover mb-0">
-                    <thead>
+            <div class="table-responsive" style="max-height: 520px; overflow: auto;">
+                <table class="table table-production table-striped table-hover mb-0" style="min-width: 700px;">
+                    <thead style="position: sticky; top: 0; z-index: 2; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
                         <tr>
                             <th>Machine No</th>
                             <th>Part Name</th>
-                            <th class="d-none d-md-table-cell">Time Start</th>
-                            <th class="d-none d-md-table-cell">Time Finish</th>
+                            <th>Time Start</th>
+                            <th id="timeColumnHeader">{{ $selectedStatus === 'FINISH' ? 'Time Finish' : 'Time Input' }}</th>
+                            <th>Qty</th>
                             <th>Productivity</th>
-                            <th class="d-none d-md-table-cell">Target</th>
+                            <th>Target</th>
                             <th>Status</th>
                         </tr>
                     </thead>
@@ -127,10 +201,15 @@
                             <tr onclick="window.location='{{ route('production.show', $record->id) }}'">
                                 <td class="fw-medium">{{ $record->machine_no }}</td>
                                 <td>{{ $record->part_name ?? '-' }}</td>
-                                <td class="d-none d-md-table-cell">{{ $record->time_start ? \Carbon\Carbon::parse($record->time_start)->format('H:i') : '-' }}</td>
-                                <td class="d-none d-md-table-cell">{{ $record->time_finish ? \Carbon\Carbon::parse($record->time_finish)->format('H:i') : '-' }}</td>
+                                <td>{{ $record->time_start ? \Carbon\Carbon::parse($record->time_start)->format('H:i') : '-' }}</td>
+                                @if(strtoupper(trim($record->finish ?? '')) === 'FINISH')
+                                    <td>{{ $record->time_finish ? \Carbon\Carbon::parse($record->time_finish)->format('H:i') : '-' }}</td>
+                                @else
+                                    <td>{{ $record->time_input_qty_produksi ? \Carbon\Carbon::parse($record->time_input_qty_produksi)->format('H:i') : '-' }}</td>
+                                @endif
+                                <td>{{ $record->qty_proses !== null ? number_format($record->qty_proses, 0, ',', '.') : '-' }}</td>
                                 <td>{{ $record->productivity !== null ? number_format($record->productivity * 100, 0, ',', '.') . '%' : '-' }}</td>
-                                <td class="d-none d-md-table-cell">{{ $record->target_productivity !== null ? number_format($record->target_productivity * 100, 0, ',', '.') . '%' : '-' }}</td>
+                                <td>{{ $record->target_productivity !== null ? number_format($record->target_productivity * 100, 0, ',', '.') . '%' : '-' }}</td>
                                 <td>
                                     @if($record->is_on_target)
                                         <span class="badge badge-on-target"><i class="bi bi-check-circle me-1"></i>On Target</span>
@@ -141,7 +220,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="7" class="text-center text-muted py-5">
+                                <td colspan="8" class="text-center text-muted py-5">
                                     <i class="bi bi-inbox" style="font-size: 2rem;"></i>
                                     <p class="mt-2 mb-0">Tidak ada data produksi untuk tanggal ini</p>
                                 </td>
@@ -172,81 +251,105 @@
      * Inisiasi / update semua chart dengan data baru.
      */
     function renderCharts(data) {
-        // ---- Chart Produktivitas per Mesin ----
         const prodLabels = Object.keys(data.charts.productivityByMachine);
         const prodValues = Object.values(data.charts.productivityByMachine);
 
+        const chartWrapper = document.getElementById('chartProductivityWrapper');
+        if (chartWrapper) {
+            chartWrapper.style.minWidth = (prodLabels.length * 50) + 'px';
+        }
+
         if (chartProductivity) chartProductivity.destroy();
-        chartProductivity = new Chart(document.getElementById('chartProductivity'), {
-            data: {
-                labels: prodLabels,
-                datasets: [
-                {
-                    type: 'line',
-                    label: 'Target 100%',
-                    data: prodLabels.map(() => 100),
-                    borderColor: '#dc3545',
-                    borderWidth: 2,
-                    borderDash: [5, 5],
-                    pointRadius: 0,
-                    fill: false,
-                    order: 1
-                },
-                {
-                    type: 'bar',
-                    label: 'Produktivitas (%)',
-                    data: prodValues,
-                    backgroundColor: '#0d6efd', // Uniform primary color
-                    borderRadius: 6,
-                    maxBarThickness: 50,
-                    order: 2
-                }],
+
+        const options = {
+            series: [{
+                name: 'Produktivitas (%)',
+                type: 'column',
+                data: prodValues
+            }, {
+                name: 'Target 100%',
+                type: 'line',
+                data: prodLabels.map(() => 100)
+            }],
+            chart: {
+                height: 350,
+                type: 'line',
+                toolbar: {
+                    show: true
+                }
             },
-            plugins: [{
-                id: 'barLabels',
-                afterDatasetsDraw(chart) {
-                    const ctx = chart.ctx;
-                    chart.data.datasets.forEach((dataset, i) => {
-                        if (dataset.type === 'line') return;
-                        const meta = chart.getDatasetMeta(i);
-                        meta.data.forEach((bar, index) => {
-                            const data = dataset.data[index] + '%';
-                            let yPos = bar.y - 5;
-                            ctx.fillStyle = '#212529'; // Dark text default (above bar)
-                            
-                            // If the bar is hitting or exceeding the top boundary, place the text INSIDE the top of the bar
-                            if (yPos < 15) {
-                                yPos = Math.max(bar.y, 0) + 15;
-                                ctx.fillStyle = '#212529'; // Dark text inside blue bar (instead of white)
-                            }
-                            
-                            ctx.font = 'bold 13px sans-serif';
-                            ctx.textAlign = 'center';
-                            ctx.textBaseline = 'bottom';
-                            ctx.fillText(data, bar.x, yPos);
-                        });
-                    });
+            stroke: {
+                width: [0, 2],
+                curve: 'smooth',
+                dashArray: [0, 5]
+            },
+            colors: ['#0d6efd', '#dc3545'],
+            fill: {
+                type: 'gradient',
+                gradient: {
+                    shade: 'light',
+                    type: "vertical",
+                    opacityFrom: 0.85,
+                    opacityTo: 0.85,
+                    stops: [50, 0, 100]
+                }
+            },
+            plotOptions: {
+                bar: {
+                    columnWidth: '50%',
+                    borderRadius: 6,
+                    dataLabels: {
+                        position: 'top',
+                    }
+                }
+            },
+            dataLabels: {
+                enabled: true,
+                enabledOnSeries: [0],
+                formatter: function (val) {
+                    return val + "%";
+                },
+                offsetY: -20,
+                style: {
+                    fontSize: '11px',
+                    colors: ["#304758"]
+                }
+            },
+            labels: prodLabels,
+            xaxis: {
+                type: 'category'
+            },
+            yaxis: [{
+                title: {
+                    text: 'Produktivitas (%)',
+                },
+                max: 120,
+                labels: {
+                    formatter: function (val) {
+                        return val.toFixed(0) + "%";
+                    }
                 }
             }],
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: false },
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        suggestedMax: 120,
-                        grace: '10%',
-                        ticks: { callback: v => v + '%' },
-                    },
-                },
+            legend: {
+                position: 'top',
+                horizontalAlign: 'right',
             },
-        });
+            tooltip: {
+                shared: true,
+                intersect: false,
+                y: {
+                    formatter: function (y) {
+                        if (typeof y !== "undefined") {
+                            return y.toFixed(1) + "%";
+                        }
+                        return y;
+                    }
+                }
+            }
+        };
 
-
-        // Chart customer dihilangkan karena tidak ada element canvas.
+        chartProductivity = new ApexCharts(document.querySelector("#chartProductivity"), options);
+        chartProductivity.render();
     }
 
     /**
@@ -259,14 +362,20 @@
 
     /**
      * Update tabel produksi.
+     * Juga update header kolom waktu berdasarkan filter status aktif.
      */
     function updateTable(tableData) {
         const tbody = document.getElementById('tableBody');
+        const status = getSelectedStatus();
+        const headerEl = document.getElementById('timeColumnHeader');
+        if (headerEl) {
+            headerEl.textContent = status === 'FINISH' ? 'Time Finish' : 'Time Input';
+        }
 
         if (!tableData || tableData.length === 0) {
             tbody.innerHTML = `
                 <tr>
-                    <td colspan="7" class="text-center text-muted py-5">
+                    <td colspan="8" class="text-center text-muted py-5">
                         <i class="bi bi-inbox" style="font-size: 2rem;"></i>
                         <p class="mt-2 mb-0">Tidak ada data produksi untuk tanggal ini</p>
                     </td>
@@ -278,10 +387,11 @@
             <tr onclick="window.location='/production/${row.id}'">
                 <td class="fw-medium">${row.machine_no ?? '-'}</td>
                 <td>${row.part_name ?? '-'}</td>
-                <td class="d-none d-md-table-cell">${row.time_start ? row.time_start.slice(0, 5) : '-'}</td>
-                <td class="d-none d-md-table-cell">${row.time_finish ? row.time_finish.slice(0, 5) : '-'}</td>
+                <td>${row.time_start ? row.time_start.slice(0, 5) : '-'}</td>
+                <td>${row.finish && row.finish.toUpperCase().trim() === 'FINISH' ? (row.time_finish ? row.time_finish.slice(0, 5) : '-') : (row.time_input_qty_produksi ? row.time_input_qty_produksi.slice(0, 5) : '-')}</td>
+                <td>${row.qty_proses !== null ? Number(row.qty_proses).toLocaleString('id-ID') : '-'}</td>
                 <td>${row.productivity !== null ? formatPercent(row.productivity * 100) : '-'}</td>
-                <td class="d-none d-md-table-cell">${row.target_productivity !== null ? formatPercent(row.target_productivity * 100) : '-'}</td>
+                <td>${row.target_productivity !== null ? formatPercent(row.target_productivity * 100) : '-'}</td>
                 <td>
                     ${row.is_on_target
                         ? '<span class="badge badge-on-target"><i class="bi bi-check-circle me-1"></i>On Target</span>'
@@ -300,12 +410,19 @@
         return el ? el.value : '';
     }
 
+    function getSelectedMachineType() {
+        const el = document.getElementById('machineTypeFilter');
+        return el ? el.value : '';
+    }
+
     async function fetchData(date) {
         showLoading();
 
         const status = getSelectedStatus();
+        const machineType = getSelectedMachineType();
         const params = new URLSearchParams({ date });
-        if (status) params.set('status', status);
+        params.set('status', status);
+        params.set('machine_type', machineType);
 
         try {
             const response = await fetch(`/dashboard/data?${params}`, {
@@ -336,8 +453,10 @@
 
     function pushDashboardUrl(date) {
         const status = getSelectedStatus();
+        const machineType = getSelectedMachineType();
         const params = new URLSearchParams({ date });
-        if (status) params.set('status', status);
+        params.set('status', status);
+        params.set('machine_type', machineType);
         history.pushState(null, '', `/dashboard?${params}`);
     }
 
@@ -358,6 +477,14 @@
     });
 
     document.getElementById('statusFilter').addEventListener('change', function () {
+        const date = document.getElementById('datePicker').value;
+        if (date) {
+            pushDashboardUrl(date);
+            fetchData(date);
+        }
+    });
+
+    document.getElementById('machineTypeFilter').addEventListener('change', function () {
         const date = document.getElementById('datePicker').value;
         if (date) {
             pushDashboardUrl(date);

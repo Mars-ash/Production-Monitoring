@@ -91,7 +91,6 @@
             color: #495057 !important;
         }
 
-        /* Pill tanggal — biru, teks putih, ikon kalender (mudah dibaca) */
         label.date-pill {
             position: relative;
             display: inline-block;
@@ -124,7 +123,7 @@
             flex-shrink: 0;
         }
 
-        /* Input menutupi pill; area klik native date sering kecil — perluas + label sebagai cadangan */
+       
         .date-pill-input {
             position: absolute;
             inset: 0;
@@ -136,7 +135,7 @@
             border: 0;
             opacity: 0;
             cursor: pointer;
-            font-size: 16px; /* cegah zoom iOS */
+            font-size: 16px; 
             z-index: 2;
             box-sizing: border-box;
         }
@@ -237,17 +236,16 @@
             font-size: 1.65rem;
         }
 
-        /* Page heading sticky under navbar */
+        
         .page-heading-sticky {
             position: sticky;
             top: 0;
-            z-index: 1019; /* below bootstrap sticky navbar (1020) */
+            z-index: 1019; 
             padding-top: 0.75rem;
             padding-bottom: 0.75rem;
             background: #f0f2f5;
         }
 
-        /* Make page heading act like a button/link */
         .page-heading-link {
             display: block;
             text-decoration: none;
@@ -375,6 +373,8 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js" crossorigin="anonymous"></script>
+    <!-- ApexCharts -->
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
 
     <script>
         // CSRF token untuk AJAX

@@ -54,17 +54,12 @@ class AccessDataTransformer
             'remark'                  => $this->pick($normalizedRaw, ['Remark', 'remark', 'REMARK', 'Catatan', 'catatan']),
         ];
 
-        // Validasi Mandatory Keys
-        if (empty($data['machine_no']) || empty($data['date'])) {
-            return null;
-        }
-
         // Clean & Format
         foreach ($data as $key => $val) {
             if ($val === null) continue;
 
             if (is_string($val)) {
-                $val = trim($val);
+                $val = $this->sanitizeString($val);
             }
 
             if ($val === '' || $val === ':' || $val === '-') {
@@ -77,6 +72,11 @@ class AccessDataTransformer
             } else {
                 $data[$key] = $val;
             }
+        }
+
+        // Validasi Mandatory Keys
+        if (empty($data['machine_no']) || empty($data['date'])) {
+            return null;
         }
 
         // Formatting dates/times for MySQL
@@ -152,4 +152,16 @@ class AccessDataTransformer
 
         return is_numeric($cleanVal) ? (float) $cleanVal : null;
     }
+       private function sanitizeString(string $val): string
+    {
+        $val = str_replace("\xC2\xA0", ' ', $val);
+        $val = str_replace("\xA0", ' ', $val);
+        $val = str_replace(["\x00", "\x01", "\x02", "\x03", "\x04", "\x05", "\x06", "\x07", "\x08"], '', $val);
+        $val = mb_convert_encoding($val, 'UTF-8', 'UTF-8');
+        $val = preg_replace('/[\x80-\x9F]/u', '', $val) ?? $val;
+        $val = preg_replace('/\s+/', ' ', $val) ?? $val;
+
+        return trim($val);
+    }
 }
+

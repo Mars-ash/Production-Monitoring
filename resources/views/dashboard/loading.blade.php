@@ -506,7 +506,8 @@
         const params = new URLSearchParams({ mode, date, month, machine_type: machineType, machine_no: machineNo });
 
         try {
-            const resp = await fetch(`/dashboard/loading/data?${params}`, {
+            const url = `{{ route('loading.data') }}?${params}`;
+            const resp = await fetch(url, {
                 headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': csrfToken },
             });
 
@@ -519,7 +520,7 @@
             updateSubtitle();
 
             const urlParams = new URLSearchParams({ mode, date, month, machine_type: machineType, machine_no: machineNo });
-            history.pushState(null, '', `/dashboard/loading?${urlParams}`);
+            history.pushState(null, '', `{{ route('loading.index') }}?${urlParams}`);
 
         } catch (err) {
             console.error('Error fetching loading data:', err);

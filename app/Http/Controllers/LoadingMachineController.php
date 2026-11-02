@@ -57,7 +57,7 @@ class LoadingMachineController extends Controller
         $dateMode    = $request->input('mode', 'daily');
         $date        = $request->input('date') ?? Carbon::today()->format('Y-m-d');
         $month       = $request->input('month') ?? Carbon::today()->format('Y-m');
-        $rawMachineType = $request->has('machine_type') ? $request->input('machine_type') : 'Stamping';
+        $rawMachineType = $request->input('machine_type', '');
         $machineType = $rawMachineType ?? '';
         $machineNo   = $request->input('machine_no') ?? '';
         [$machineType, $machineNo] = $this->normalizeLoadingFilters($machineType, $machineNo);
@@ -96,7 +96,7 @@ class LoadingMachineController extends Controller
         $dateMode    = $request->input('mode', 'daily');
         $date        = $request->input('date') ?? Carbon::today()->format('Y-m-d');
         $month       = $request->input('month') ?? Carbon::today()->format('Y-m');
-        $rawMachineType = $request->has('machine_type') ? $request->input('machine_type') : 'Stamping';
+        $rawMachineType = $request->input('machine_type', '');
         $machineType = $rawMachineType ?? '';
         $machineNo   = $request->input('machine_no') ?? '';
         [$machineType, $machineNo] = $this->normalizeLoadingFilters($machineType, $machineNo);
@@ -225,33 +225,32 @@ class LoadingMachineController extends Controller
             return $result;
 
         } else {
-            // == DAILY MODE ==
+            // == DAILY MODE (Opsi A: Hanya menampilkan mesin yang benar-benar beroperasi di Access) ==
             $query->forDate($date);
-            $dbRows = $query->get()->keyBy('machine_no');
 
-            $masterList = self::MACHINE_LIST;
             if ($machineNo !== null && $machineNo !== '') {
-                $masterList = array_intersect_key($masterList, [$machineNo => true]);
+                $query->ofMachineNo($machineNo);
             } elseif ($machineType !== null && $machineType !== '') {
-                if ($machineType === 'Stamping') {
-                    $masterList = array_filter($masterList, fn ($t) => $t === 'Stamping');
-                } elseif ($machineType === 'Non Stamping') {
-                    $masterList = array_filter($masterList, fn ($t) => $t !== 'Stamping');
-                }
+                $query->ofMesinType($machineType);
             }
 
+            $dbRows = $query->orderBy('machine_no')->get();
+
             $result = [];
-            foreach ($masterList as $no => $typeProcess) {
-                $r = $dbRows->get($no);
+            foreach ($dbRows as $r) {
+                $loadingPct = $r->loading_pct !== null
+                    ? (float)$r->loading_pct
+                    : ($r->work_time_eff_m !== null ? ((float)$r->work_time_eff_m / 840) : null);
+
                 $result[] = [
-                    'Machine No'           => $no,
-                    'Date'                 => $r?->date?->format('Y-m-d') ?? $date,
-                    'Work Time Mc'         => 840,
-                    'SumOfDurasi M Total'  => $r?->durasi_m_total,
-                    'SumOfWork Time Eff M' => $r?->work_time_eff_m,
-                    '% Loading'            => $r && $r->work_time_eff_m !== null ? ((float)$r->work_time_eff_m / 840) : null,
-                    'Machine Type Process' => $r?->machine_type_process ?? $typeProcess,
-                    'Mesin Type'           => $r?->mesin_type,
+                    'Machine No'           => $r->machine_no,
+                    'Date'                 => $r->date?->format('Y-m-d') ?? $date,
+                    'Work Time Mc'         => (float)($r->work_time_mc ?? 840),
+                    'SumOfDurasi M Total'  => $r->durasi_m_total,
+                    'SumOfWork Time Eff M' => $r->work_time_eff_m,
+                    '% Loading'            => $loadingPct,
+                    'Machine Type Process' => $r->machine_type_process ?? (self::MACHINE_LIST[$r->machine_no] ?? '-'),
+                    'Mesin Type'           => $r->mesin_type,
                 ];
             }
             return $result;

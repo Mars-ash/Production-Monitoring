@@ -58,7 +58,7 @@
                                 <td class="text-muted">{{ $user->created_at->format('d M Y, H:i') }}</td>
                                 <td class="text-end pe-4">
                                     @if(Auth::id() !== $user->id)
-                                        <form action="{{ route('users.destroy', $user->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Apakah Anda yakin ingin menghapus user {{ $user->username }}?');">
+                                        <form action="{{ route('users.destroy', $user->id, false) }}" method="POST" class="d-inline" onsubmit="return confirm('Apakah Anda yakin ingin menghapus user {{ $user->username }}?');">
                                             @csrf
                                             @method('DELETE')
                                             <button type="submit" class="btn btn-sm btn-outline-danger rounded-3" title="Hapus User">
@@ -96,7 +96,7 @@
 <div class="modal fade" id="addUserModal" tabindex="-1" aria-labelledby="addUserModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow">
-            <form action="{{ route('users.store') }}" method="POST">
+            <form action="{{ route('users.store', [], false) }}" method="POST">
                 @csrf
                 <div class="modal-header border-bottom-0 pb-0">
                     <h5 class="modal-title fw-bold" id="addUserModalLabel">Tambah User Baru</h5>
@@ -116,7 +116,7 @@
                     </div>
                     <div class="mb-3">
                         <label for="password" class="form-label fw-medium text-muted small">Password</label>
-                        <input type="password" class="form-control bg-light" id="password" name="password" required placeholder="Minimal 5 karakter">
+                        <input type="password" class="form-control bg-light" id="password" name="password" required placeholder="Masukkan password">
                     </div>
                     <div class="mb-0">
                         <label for="password_confirmation" class="form-label fw-medium text-muted small">Konfirmasi Password</label>

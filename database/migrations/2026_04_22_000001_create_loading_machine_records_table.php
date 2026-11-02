@@ -6,10 +6,7 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Tabel loading_machine_records — menyimpan data loading mesin harian
-     * yang disinkronkan dari Microsoft Access (Query - Daily Loading Mc).
-     */
+    
     public function up(): void
     {
         Schema::create('loading_machine_records', function (Blueprint $table) {

@@ -183,10 +183,10 @@
                         <tr>
                             <th>Machine No</th>
                             <th>Part Name</th>
+                            <th>Productivity</th>
                             <th>Time Start</th>
                             <th id="timeColumnHeader">{{ $selectedStatus === 'FINISH' ? 'Time Finish' : 'Time Input' }}</th>
                             <th>Qty</th>
-                            <th>Productivity</th>
                             <th>Target</th>
                             <th>Status</th>
                         </tr>
@@ -196,6 +196,7 @@
                             <tr onclick="window.location='{{ route('production.show', $record->id) }}'">
                                 <td class="fw-medium">{{ $record->machine_no }}</td>
                                 <td>{{ $record->part_name ?? '-' }}</td>
+                                <td>{{ $record->productivity !== null ? number_format($record->productivity * 100, 0, ',', '.') . '%' : '-' }}</td>
                                 <td>{{ $record->time_start ? \Carbon\Carbon::parse($record->time_start)->format('H:i') : '-' }}</td>
                                 @if(strtoupper(trim($record->finish ?? '')) === 'FINISH')
                                     <td>{{ $record->time_finish ? \Carbon\Carbon::parse($record->time_finish)->format('H:i') : '-' }}</td>
@@ -203,7 +204,6 @@
                                     <td>{{ $record->time_input_qty_produksi ? \Carbon\Carbon::parse($record->time_input_qty_produksi)->format('H:i') : '-' }}</td>
                                 @endif
                                 <td>{{ $record->qty_proses !== null ? number_format($record->qty_proses, 0, ',', '.') : '-' }}</td>
-                                <td>{{ $record->productivity !== null ? number_format($record->productivity * 100, 0, ',', '.') . '%' : '-' }}</td>
                                 <td>{{ $record->target_productivity !== null ? number_format($record->target_productivity * 100, 0, ',', '.') . '%' : '-' }}</td>
                                 <td>
                                     @if($record->is_on_target)
@@ -365,13 +365,13 @@
         }
 
         tbody.innerHTML = tableData.map(row => `
-            <tr onclick="window.location='/production/${row.id}'">
+            <tr onclick="window.location='{{ url('/production') }}/${row.id}'">
                 <td class="fw-medium">${row.machine_no ?? '-'}</td>
                 <td>${row.part_name ?? '-'}</td>
+                <td>${row.productivity !== null ? formatPercent(row.productivity * 100) : '-'}</td>
                 <td>${row.time_start ? row.time_start.slice(0, 5) : '-'}</td>
                 <td>${row.finish && row.finish.toUpperCase().trim() === 'FINISH' ? (row.time_finish ? row.time_finish.slice(0, 5) : '-') : (row.time_input_qty_produksi ? row.time_input_qty_produksi.slice(0, 5) : '-')}</td>
                 <td>${row.qty_proses !== null ? Number(row.qty_proses).toLocaleString('id-ID') : '-'}</td>
-                <td>${row.productivity !== null ? formatPercent(row.productivity * 100) : '-'}</td>
                 <td>${row.target_productivity !== null ? formatPercent(row.target_productivity * 100) : '-'}</td>
                 <td>
                     ${row.is_on_target
@@ -403,7 +403,8 @@
         params.set('machine_type', machineType);
 
         try {
-            const response = await fetch(`/dashboard/data?${params}`, {
+            const url = `{{ route('dashboard.data') }}?${params}`;
+            const response = await fetch(url, {
                 headers: {
                     'Accept': 'application/json',
                     'X-CSRF-TOKEN': csrfToken,
@@ -431,7 +432,7 @@
         const params = new URLSearchParams({ date });
         params.set('status', status);
         params.set('machine_type', machineType);
-        history.pushState(null, '', `/dashboard?${params}`);
+        history.pushState(null, '', `{{ route('dashboard') }}?${params}`);
     }
 
     function syncDateDisplayFormatted() {

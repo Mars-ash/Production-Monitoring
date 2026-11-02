@@ -13,15 +13,44 @@ class AccessSyncService
     ) {}
 
     /**
-     * Perform full or daily synchronization.
+     * Perform full, daily, or lookback window synchronization.
+     *
+     * @param string|null $date Specific date (Y-m-d)
+     * @param int|null $days Lookback days count (e.g. 7 for last 7 days)
      */
-    public function sync(?string $date = null): array
+    public function sync(?string $date = null, ?int $days = null): array
+    {
+        // If lookback days is specified (e.g. last 7 days)
+        if ($date === null && $days !== null && $days > 1) {
+            $totalSynced = 0;
+            $totalDeleted = 0;
+            for ($i = $days - 1; $i >= 0; $i--) {
+                $targetDate = \Illuminate\Support\Carbon::today()->subDays($i)->format('Y-m-d');
+                $result = $this->syncSingle($targetDate);
+                $totalSynced += $result['synced'];
+                $totalDeleted += $result['deleted'];
+            }
+
+            return [
+                'synced' => $totalSynced,
+                'deleted' => $totalDeleted,
+                'status' => 'success',
+            ];
+        }
+
+        return $this->syncSingle($date);
+    }
+
+    /**
+     * Perform sync for a specific single date or all dates.
+     */
+    private function syncSingle(?string $date = null): array
     {
         $correlationId = uniqid('sync_svc_', true);
         
         Log::info('AccessSyncService: Sinkronisasi dimulai', [
             'correlationId' => $correlationId,
-            'date' => $date ?? 'today',
+            'date' => $date ?? 'all',
         ]);
 
         $rawRecords = $this->accessService->fetchRecords($date);
@@ -80,8 +109,35 @@ class AccessSyncService
 
     /**
      * Perform synchronization for loading machine records.
+     *
+     * @param string|null $date Specific date (Y-m-d)
+     * @param string|null $month Specific month (Y-m)
+     * @param int|null $days Lookback days count (e.g. 7 for last 7 days)
      */
-    public function syncLoading(?string $date = null, ?string $month = null): array
+    public function syncLoading(?string $date = null, ?string $month = null, ?int $days = null): array
+    {
+        // If lookback days is specified (e.g. last 7 days)
+        if ($date === null && $month === null && $days !== null && $days > 1) {
+            $totalSynced = 0;
+            for ($i = $days - 1; $i >= 0; $i--) {
+                $targetDate = \Illuminate\Support\Carbon::today()->subDays($i)->format('Y-m-d');
+                $result = $this->syncLoadingSingle($targetDate, null);
+                $totalSynced += $result['synced'];
+            }
+
+            return [
+                'synced' => $totalSynced,
+                'status' => 'success',
+            ];
+        }
+
+        return $this->syncLoadingSingle($date, $month);
+    }
+
+    /**
+     * Perform sync loading for a specific single date, month, or all.
+     */
+    private function syncLoadingSingle(?string $date = null, ?string $month = null): array
     {
         $correlationId = uniqid('sync_load_svc_', true);
 
@@ -120,6 +176,11 @@ class AccessSyncService
         }
 
         if (empty($toUpsert)) {
+            Log::warning('AccessSyncService: Data loading ditemukan tetapi tidak valid untuk diproses', [
+                'correlationId' => $correlationId,
+                'count' => count($rawRecords),
+                'available_keys' => !empty($rawRecords) ? array_keys($rawRecords[0]) : [],
+            ]);
             return ['synced' => 0, 'status' => 'no_valid_data'];
         }
 

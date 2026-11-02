@@ -35,6 +35,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/dashboard/loading', [LoadingMachineController::class, 'index'])->name('loading.index');
     Route::get('/dashboard/loading/data', [LoadingMachineController::class, 'getData'])->name('loading.data');
 
+    // On-demand Sync route
+    Route::post('/sync', [\App\Http\Controllers\SyncController::class, 'sync'])->name('sync.trigger');
+
 
 
     // Admin Routes

@@ -35,4 +35,8 @@ return [
         ],
     ],
 
+    'access_db' => [
+        'path' => env('ACCESS_DB_PATH'),
+    ],
+
 ];

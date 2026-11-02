@@ -269,6 +269,14 @@
             outline: 3px solid rgba(13, 110, 253, 0.35);
             outline-offset: 2px;
         }
+
+        @keyframes spin {
+            100% { transform: rotate(360deg); }
+        }
+        .spin-animation {
+            display: inline-block;
+            animation: spin 1s linear infinite;
+        }
     </style>
     {{-- CSS per halaman: harus di LUAR <style> utama agar tidak nested (invalid HTML) --}}
     @yield('styles')
@@ -302,6 +310,17 @@
                 </a>
             @endif
 
+            {{-- Tombol Manual Sync Access --}}
+            <button type="button"
+                    class="btn btn-sm d-flex align-items-center gap-1 me-2 my-1 text-nowrap"
+                    id="btnGlobalSync"
+                    onclick="triggerManualSync()"
+                    title="Sinkronkan data dari Microsoft Access ke MySQL sekarang"
+                    style="background: rgba(25, 135, 84, 0.45); border: 1px solid rgba(25, 135, 84, 0.7); color: #fff; border-radius: 8px; padding: 4px 10px; font-size: 0.8rem; transition: all 0.2s;">
+                <i class="bi bi-arrow-repeat" id="globalSyncIcon"></i>
+                <span id="globalSyncText">Sync Access</span>
+            </button>
+
             <button class="navbar-toggler ms-auto ms-lg-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent" aria-controls="navbarContent" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
@@ -316,7 +335,7 @@
                     <span class="text-light opacity-75" style="font-size: 0.85rem;">
                         <i class="bi bi-person-circle me-1"></i>{{ Auth::user()->username }}
                     </span>
-                    <form method="POST" action="{{ route('logout') }}" class="m-0">
+                    <form method="POST" action="{{ route('logout', [], false) }}" class="m-0">
                         @csrf
                         <button type="submit" class="btn btn-outline-light btn-sm">
                             <i class="bi bi-box-arrow-right me-1"></i>Logout
@@ -424,6 +443,57 @@
             const mi = parseInt(match[2], 10) - 1;
             const mon = FORMAT_DATE_MONTHS[mi] || match[2];
             return `${mon}-${match[1]}`;
+        }
+
+        /** Manual trigger sync dari UI */
+        async function triggerManualSync() {
+            const btn = document.getElementById('btnGlobalSync');
+            const icon = document.getElementById('globalSyncIcon');
+            const text = document.getElementById('globalSyncText');
+
+            if (btn) btn.disabled = true;
+            if (icon) icon.classList.add('spin-animation');
+            if (text) text.textContent = 'Menyinkronkan...';
+
+            const dateInput = document.getElementById('datePicker');
+            const selectedDate = dateInput ? dateInput.value : null;
+
+            try {
+                const res = await fetch('{{ route('sync.trigger') }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken,
+                    },
+                    body: JSON.stringify({
+                        date: selectedDate,
+                        days: selectedDate ? null : 7
+                    })
+                });
+
+                const data = await res.json();
+                if (res.ok && data.success) {
+                    // Jika ada function fetchData di dashboard, refresh AJAX
+                    if (typeof fetchData === 'function' && selectedDate) {
+                        await fetchData(selectedDate);
+                    } else if (typeof loadData === 'function') {
+                        await loadData();
+                    } else {
+                        window.location.reload();
+                    }
+                    alert(data.message);
+                } else {
+                    alert(data.message || 'Gagal melakukan sinkronisasi.');
+                }
+            } catch (e) {
+                console.error('Sync error:', e);
+                alert('Terjadi kesalahan saat menyinkronkan data.');
+            } finally {
+                if (btn) btn.disabled = false;
+                if (icon) icon.classList.remove('spin-animation');
+                if (text) text.textContent = 'Sync Access';
+            }
         }
     </script>
 

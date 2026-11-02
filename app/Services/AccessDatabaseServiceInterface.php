@@ -41,4 +41,9 @@ interface AccessDatabaseServiceInterface
      * Test apakah koneksi ke database Access berhasil.
      */
     public function testConnection(): bool;
+
+    /**
+     * Ambil pesan error terakhir jika koneksi gagal.
+     */
+    public function getLastError(): ?string;
 }

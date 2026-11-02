@@ -121,7 +121,7 @@
             </div>
         @endif
 
-        <form method="POST" action="{{ route('login') }}" class="needs-validation" novalidate id="loginForm">
+        <form method="POST" action="{{ route('login', [], false) }}" class="needs-validation" novalidate id="loginForm">
             @csrf
 
             <div class="form-floating mb-3">
